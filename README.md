@@ -1,6 +1,6 @@
 # plv8-mantle
 
-The underlying core for [plv8-bedrock](https://github.com/mgutz/plv8-vedrock),
+The underlying core for [plv8-bedrock](https://github.com/mgutz/plv8-bedrock),
 a PostgreSQL/plv8 project foundation for JavaScript/CoffeeScript get-it-done
 types.
 
