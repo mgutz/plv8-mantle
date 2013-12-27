@@ -1,0 +1,15 @@
+{
+  "name": "plv8-mantle",
+  "version": "0.0.1",
+  "description": "Core for plv8-bedrock",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mario Gutierrez mario@mgutz.com",
+  "license": "MIT",
+  "dependencies": {
+    "mgutz-colors": "~0.1.2"
+  },
+  "keywords": ["plv8", "postgresql", "plv8-bedrock"]
+}
