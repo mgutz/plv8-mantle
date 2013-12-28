@@ -90,21 +90,21 @@ module.exports = function(group, opts, tests) {
 
   try {
     if (before) before();
-    var i, test;
+    var i, test, testCase;
     for (i = 0; i < set.length; i++) {
       test = set[i];
       name = test.name;
-      fn = test.fn;
+      testCase = test.fn;
       if (name[0] === PENDING) {
         summary.push('  - (PENDING) ' + name.slice(1));
         pending += 1;
       } else if (name[0] === ONLY) {
         summary.push('  - ' + name.slice(1));
-        fn();
+        testCase();
         ran += 1;
       } else {
         summary.push('  - ' + name);
-        fn();
+        testCase();
         ran += 1;
       }
 
@@ -158,4 +158,7 @@ module.exports.colorful = function(truthy) {
     headerColor = colors.fn("cyan");
   }
 }
+
+
+module.exports.assert = require('./assert');
 

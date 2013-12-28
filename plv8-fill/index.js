@@ -9,9 +9,9 @@
 plv8.__executeScalar = function() {
   var result = plv8.execute.apply(plv8, arguments);
   var L = result.length;
-  if (L == 0)  {
+  if (L === 0)  {
     return null;
-  } else if (L == 1) {
+  } else if (L === 1) {
     var row = result[0];
     var scalarKey = Object.keys(row)[0];
     return row[scalarKey];
@@ -19,6 +19,19 @@ plv8.__executeScalar = function() {
     throw new Error('Expected single row, query returned multiple rows');
   }
 };
+
+
+plv8.__executeRow = function() {
+  var result = plv8.execute.apply(plv8, arguments);
+  var L = result.length;
+  if (L === 0)  {
+    return null;
+  } else if (L === 1) {
+    return result[0];
+  } else {
+    throw new Error('Expected single row, query returned multiple rows');
+  }
+}
 
 
 plv8.__dumpGlobal = function() {

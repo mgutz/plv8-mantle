@@ -17,6 +17,32 @@ Global leaks are checked automatically. To add exclusions
 
     spec.addGlobals(['YourApp', 'console']);
 
+## Assert
+
+While you may use any assert library, they will not give you much context
+when an error occurs due to the bundling of code. It is advised to
+use the provided `microspec.assert` which gives a nice error stack, where `⇢ `
+marks the execution path.
+
+    AssertionError: 3 > 5
+      at spec.should fail (plv8_startup:2660:5)
+        spec('better assert', {
+          'should fail': function() {
+      ⇢     assert(3 > 5);
+          }
+
+      at module.exports (plv8_startup:1516:9)
+              } else {
+                summary.push('  - ' + name);
+      ⇢         testCase();
+                ran += 1;
+
+`microspec.assert` has a simple signature `function(truthy)`.
+
+    assert(false);          // same as assert.fail()
+    assert(true);           // as as assert.ok()
+    assert(1 == 1);         // same as assert.equal()
+    assert(1 === 1);        // same as assert.strictEqual()
 
 ## Example
 

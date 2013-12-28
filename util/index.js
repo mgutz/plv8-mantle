@@ -27,3 +27,4 @@ exports.dumpGlobal = function() {
   // }
   plv8.elog(LOG, summary);
 };
+
