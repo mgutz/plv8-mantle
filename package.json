@@ -9,8 +9,7 @@
   "author": "Mario Gutierrez mario@mgutz.com",
   "license": "MIT",
   "dependencies": {
-    "mgutz-colors": "~0.1.2",
-    "callsite": "~1.0.0"
+    "mgutz-colors": "~0.1.2"
   },
   "keywords": [
     "plv8",

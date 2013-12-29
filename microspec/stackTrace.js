@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 var options = require('./options');
-var callsite = require('callsite');
 
 /**
  * Expose `assert`.
