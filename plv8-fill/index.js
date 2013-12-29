@@ -3,52 +3,51 @@
  * to reduce possibility of conflict.
  */
 
+
 /**
- * Executes SQL with optional params, returning a scalar value.
+ * Executes `sql` with an `args` array, returning a scalar value.
  */
-plv8.__executeScalar = function() {
+plv8.__executeScalar = function(sql, args) {
   var result = plv8.execute.apply(plv8, arguments);
   var L = result.length;
-  if (L === 0)  {
-    return null;
-  } else if (L === 1) {
+  if (L === 1)  {
     var row = result[0];
-    var scalarKey = Object.keys(row)[0];
+    for (var scalarKey in row) break;
     return row[scalarKey];
+  } else if (L === 0) {
+    return null;
   } else {
     throw new Error('Expected single row, query returned multiple rows');
   }
 };
 
 
-plv8.__executeRow = function() {
+/**
+ * Executes `sql` with an `args` array, returning a single row.
+ */
+plv8.__executeRow = function(sql, args) {
   var result = plv8.execute.apply(plv8, arguments);
   var L = result.length;
-  if (L === 0)  {
-    return null;
-  } else if (L === 1) {
+  if (L === 1)  {
     return result[0];
+  } else if (L === 0) {
+    return null;
   } else {
     throw new Error('Expected single row, query returned multiple rows');
   }
 }
 
 
+/**
+ * Dumps plv8's global context.
+ */
 plv8.__dumpGlobal = function() {
-  var global = (function(){returnthis;})
   var globals = [];
-  for (var k in global) {
+  var k, global = (function(){return this;})(null);
+  for (k in global) {
     globals.push(k);
   }
   var summary = ['\n', 'Globals', '-------'].concat(globals.sort()).join('\n');
-
-  // if (global.require) {
-  //   var packages =  [];
-  //   for (var k in global.require) {
-  //     packages.push(k);
-  //   }
-  //   summary = summary.concat(['\n', 'Requirable Packages', '-------------------'].concat(packages.sort()).join('\n'));
-  // }
   plv8.elog(LOG, summary);
 }
 

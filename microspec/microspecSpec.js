@@ -1,4 +1,4 @@
-var assert = require('./assert');
+var assert = require('assert');
 var spec = require('../microspec');
 
 var ran = 0;
@@ -9,7 +9,7 @@ spec('microspec', {
   },
 
   'should pass': function() {
-    assert(true);
+    assert.ok(true);
     ran++;
   },
 
@@ -24,7 +24,7 @@ spec('microspec', {
   },
 
   after: function() {
-    assert(ran === 3);
+    assert.ok(ran === 3);
   },
 
   'should have run': function() {
@@ -39,7 +39,7 @@ spec('microspec - subset marked with "+"', {
   },
 
   '+should pass': function() {
-    assert(true);
+    assert.ok(true);
     ran++;
   },
 
@@ -54,7 +54,7 @@ spec('microspec - subset marked with "+"', {
   },
 
   after: function() {
-    assert(ran === 2);
+    assert.ok(ran === 2);
   },
 
   'should have run': function() {
@@ -74,18 +74,18 @@ spec('microspec - intentional errors', {
   },
 
   'should fail': function() {
-    assert("hello" === "yello");
+    assert.ok("hello" === "yello");
   },
 });
 
 spec('_microspec - entire spec is pending', {
   'should fail': function() {
-    assert(false);
+    assert.ok(false);
   }
 });
 
 spec('#microspec - entire spec is ignored', {
   'should fail': function() {
-    assert(false);
+    assert.ok(false);
   }
 });

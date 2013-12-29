@@ -1,24 +1,10 @@
-var options = {
-  globals: [
-    'DEBUG5',
-    'DEBUG4',
-    'DEBUG3',
-    'DEBUG2',
-    'DEBUG1',
-    'DEBUG',
-    'LOG',
-    'INFO',
-    'NOTICE',
-    'WARNING',
-    'ERROR',
-    'plv8'
-  ],
-  colorful: false
-};
+var options = require('./options');
+var util = require('../util');
+var stackTrace = require('./stackTrace');
+var AssertionError = require('assert').AssertionError;
 
 // these are set only if options.colorful(true) is called
 var colors, failColor, headerColor, passColor;
-
 
 function checkGlobals(moreGlobals) {
   var global = (function(){ return this; }).call(null);
@@ -36,7 +22,9 @@ var IGNORE = '#';
 var PENDING = '_';
 var ONLY = '+';
 
-module.exports = function(group, opts, tests) {
+
+
+module.exports = function runSuite(group, opts, tests) {
   if (group[0] === IGNORE) return;
 
 
@@ -126,11 +114,10 @@ module.exports = function(group, opts, tests) {
     }
   } catch(e) {
     if (e.stack) {
-      message = e.stack;
+      message = stackTrace(e.stack).message;
     } else {
       message = e.message;
     }
-    message = '\n' + message;
 
     if (options.colorful) {
       var last = summary[summary.length - 1];
@@ -149,16 +136,17 @@ module.exports.addGlobals = function(arr) {
   options.globals = options.globals.concat(arr);
 };
 
-module.exports.colorful = function(truthy) {
-  options.colorful = truthy;
-  if (truthy) {
-    colors = require('mgutz-colors');
-    passColor = colors.fn("green");
-    failColor = colors.fn("red");
-    headerColor = colors.fn("cyan");
+module.exports.options = function(opts) {
+  if (arguments.length === 1) {
+    util.extend(options, opts);
+    if (options.colorful) {
+      colors = require('mgutz-colors');
+      passColor = colors.fn('green');
+      failColor = colors.fn('red');
+      headerColor = colors.fn('cyan');
+    }
+  } else {
+    return options;
   }
 }
-
-
-module.exports.assert = require('./assert');
 

@@ -6,25 +6,17 @@ exports.getGlobal = function() {
 };
 
 
-/**
- * Logs the global context and global.require.
- */
-exports.dumpGlobal = function() {
-  var global = exports.getGlobal();
+exports.extend = function(object) {
+    // Takes an unlimited number of extenders.
+    var args = Array.prototype.slice.call(arguments, 1);
 
-  var globals = [];
-  for (var k in global) {
-    globals.push(k);
-  }
-  var summary = ['\n', 'Globals', '-------'].concat(globals.sort()).join('\n');
+    // For each extender, copy their properties on our object.
+    for (var i = 0, source; source = args[i]; i++) {
+        if (!source) continue;
+        for (var property in source) {
+            object[property] = source[property];
+        }
+    }
 
-  // if (global.require) {
-  //   var packages =  [];
-  //   for (var k in global.require) {
-  //     packages.push(k);
-  //   }
-  //   summary = summary.concat(['\n', 'Requirable Packages', '-------------------'].concat(packages.sort()).join('\n'));
-  // }
-  plv8.elog(LOG, summary);
+    return object;
 };
-
