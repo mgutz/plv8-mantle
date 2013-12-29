@@ -51,3 +51,8 @@ plv8.__dumpGlobal = function() {
   plv8.elog(LOG, summary);
 }
 
+
+// !!!
+// `plv8.__dumpSource` is added by microspec/stackTrace and should only
+// be used while unit testing
+
