@@ -4,10 +4,10 @@ var stackTrace = require('./stackTrace').stackTrace;
 var AssertionError = require('assert').AssertionError;
 
 // these are set only if options.colorful(true) is called
-var colors, failColor, headerColor, passColor;
 var IGNORE = '#';
 var PENDING = '_';
 var ONLY = '+';
+var runner = require('./runner');
 
 function checkGlobals(moreGlobals) {
   var global = (function(){ return this; }).call(null);
@@ -21,18 +21,8 @@ function checkGlobals(moreGlobals) {
   return summary;
 };
 
-
-module.exports = runSuite;
-
-
-function runSuite(group, opts, tests) {
-  if (group[0] === IGNORE) return;
-  if (arguments.length === 2) {
-    tests = opts;
-    opts = {};
-  }
-
-  var name, fn, total, only, message;
+function gatherTestCases(tests) {
+  var name, fn;
   var before, after;
   var subset = [];
   var set = [];
@@ -55,24 +45,40 @@ function runSuite(group, opts, tests) {
     }
   }
 
-  var ran = 0, pending = 0;
-
   if (subset.length > 0) set = subset;
+  if (before) {
+    set.unshift({name: 'before', fn: before});
+  }
+  if (after) {
+    set.push({name: 'after', fn: after});
+  }
+  return set;
+}
+
+exports.run = function(group, opts, tests) {
+  if (group[0] === IGNORE) return;
+  if (arguments.length === 2) {
+    tests = opts;
+    opts = {};
+  }
+
   var pendingGroup;
   if (group[0] === PENDING) {
     pendingGroup = true;
     group = '(PENDING) ' + group.slice(1);
   }
 
-  var summary = ['', options.colorful ?  headerColor(group) : group];
+  var summary = ['', options.colorful ?  options.headerColor(group) : group];
 
   if (pendingGroup) {
     console.log(summary.join('\n'));
     return;
   }
 
+  var set = gatherTestCases(tests);
+  var ran = 0, pending = 0, name, message;
+
   try {
-    if (before) before();
     var i, test, testCase;
     for (i = 0; i < set.length; i++) {
       test = set[i];
@@ -81,10 +87,15 @@ function runSuite(group, opts, tests) {
       if (name[0] === PENDING) {
         summary.push('  - (PENDING) ' + name.slice(1));
         pending += 1;
+      } else if (!testCase) {
+        summary.push('  - (PENDING) ' + name);
+        pending += 1;
       } else if (name[0] === ONLY) {
         summary.push('  - ' + name.slice(1));
         testCase();
         ran += 1;
+      } else if (name === 'before' || name === 'after') {
+        testCase();
       } else {
         summary.push('  - ' + name);
         testCase();
@@ -93,10 +104,9 @@ function runSuite(group, opts, tests) {
 
       if (options.colorful) {
         var last = summary[summary.length - 1];
-        summary[summary.length-1] = passColor(last);
+        summary[summary.length-1] = options.passColor(last);
       }
     }
-    if (after) after();
 
     message = '  ran ' + ran + ' specs';
     if (pending > 0) message += ' (' + pending + ' pending)';
@@ -105,19 +115,19 @@ function runSuite(group, opts, tests) {
     var leaks = checkGlobals(opts.globals);
     if (leaks.length > 0) {
       leaks = '\nGlobal variable leaks: ' + leaks.join(', ');
-      summary.push(options.colorful ? failColor(leaks) : leaks);
+      summary.push(options.colorful ? options.failColor(leaks) : leaks);
     }
   } catch(e) {
     if (e.stack) {
       message = stackTrace(e.stack).message;
     } else {
-      message = e.message;
+      message = e.toString();
     }
 
     if (options.colorful) {
       var last = summary[summary.length - 1];
-      summary[summary.length-1] = failColor(last);
-      summary.push(failColor(message));
+      summary[summary.length-1] = options.failColor(last);
+      summary.push(options.failColor(message));
     } else {
       summary.push(message);
     }
@@ -126,27 +136,5 @@ function runSuite(group, opts, tests) {
   console.log(summary.join('\n'));
 };
 
-/**
- * Add global var exclusions, used by `checkGlobals`
- */
-module.exports.addGlobals = function(arr) {
-  options.globals = options.globals.concat(arr);
-};
 
-/**
- * Extend options.
- */
-module.exports.options = function(opts) {
-  if (arguments.length === 1) {
-    util.extend(options, opts);
-    if (options.colorful) {
-      colors = require('mgutz-colors');
-      passColor = colors.fn('green');
-      failColor = colors.fn('red');
-      headerColor = colors.fn('cyan');
-    }
-  } else {
-    return options;
-  }
-}
 

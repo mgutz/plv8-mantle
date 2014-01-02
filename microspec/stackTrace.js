@@ -23,8 +23,8 @@ function parseStack(stack) {
       result.push({
         location: matches[1].trim(),
         filename: matches[2],
-        lineno: matches[3],
-        colno: matches[4]
+        lineno: parseInt(matches[3], 10),
+        colno: parseInt(matches[4], 10)
       })
     }
   }
@@ -78,6 +78,7 @@ function loadCodeLines() {
  */
 exports.stackTrace = function stackTrace(istack) {
   var stack = parseStack(istack);
+  console.dir(stack);
   var codeLines = loadCodeLines();
   if (codeLines) {
     var addLine, filename, line, call, msg = '';
@@ -90,11 +91,11 @@ exports.stackTrace = function stackTrace(istack) {
       } else if (call.location) {
         var lineno = call.lineno - options.sourceLineOffset;
         if (lineno < 1) continue;
+
         line = codeLines[lineno];
-
         filename = get__filename(lineno, call.filename);
-        msg += '  ' + call.location + ' (' + filename + ':' + call.lineno + ':' + call.colno + ')';
 
+        msg += '  ' + call.location + ' (' + filename + ':' + call.lineno + ':' + call.colno + ')';
         var codeContext = getCodeContext(lineno, options.contextLines);
         if (codeContext) {
           msg += '\n';
@@ -107,7 +108,7 @@ exports.stackTrace = function stackTrace(istack) {
   } else {
     msg = 'Could not load code from plv8_sources table';
   }
-
+  //console.log('msg', msg);
   return { stack: stack, message: msg };
 }
 
