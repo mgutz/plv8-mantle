@@ -2,6 +2,7 @@
  * Module dependencies.
  */
 var options = require('./options');
+var isPlv8 = typeof plv8 !== 'undefined';
 
 /**
  * Expose `assert`.
@@ -48,8 +49,8 @@ function get__filename(lineno, defaultValue) {
 }
 
 
-function getCodeContext(lineno, n) {
-  var codeLines = loadCodeLines();
+function getCodeContext(filename, lineno, colno, n) {
+  var codeLines = loadCodeLines(filename);
   var i, line, msg = "";
   var start = Math.max(0, lineno - n);
   //var end = Math.min(lineno + n, codeLines.length);
@@ -65,12 +66,15 @@ function getCodeContext(lineno, n) {
   return msg;
 }
 
-function loadCodeLines() {
-  if (!codeLines) {
-    var code = plv8.__executeScalar("select code from plv8_sources where filename = 'plv8_startup'");
-    codeLines = code.split('\n');
+function loadCodeLines(filename) {
+  if (isPlv8) {
+    if (!codeLines) {
+      var code = plv8.__executeScalar("select code from plv8_sources where filename = 'plv8_startup'");
+      codeLines = code.split('\n');
+    }
+    return codeLines;
   }
-  return codeLines;
+  return null;
 }
 
 /**
@@ -79,35 +83,31 @@ function loadCodeLines() {
 exports.stackTrace = function stackTrace(istack) {
   var stack = parseStack(istack);
   console.dir(stack);
-  var codeLines = loadCodeLines();
-  if (codeLines) {
-    var addLine, filename, line, call, msg = '';
-    for (var i = 0, L = stack.length; i < L; i++) {
-      call = stack[i];
-      msg += '\n';
+  var addLine, filename, call, msg = '';
+  for (var i = 0, L = stack.length; i < L; i++) {
+    call = stack[i];
+    msg += '\n';
 
-      if (call.filename === '<anonymous>') {
-        // ignore
-      } else if (call.location) {
-        var lineno = call.lineno - options.sourceLineOffset;
-        if (lineno < 1) continue;
+    if (call.filename === '<anonymous>') {
+      // ignore
+    } else if (call.location) {
+      var lineno = (isPlv8) ? call.lineno  - options.sourceLineOffset : call.lineno;
+      if (lineno < 1) continue;
 
-        line = codeLines[lineno];
-        filename = get__filename(lineno, call.filename);
+      //line = codeLines[lineno];
+      filename = get__filename(lineno, call.filename);
 
-        msg += '  ' + call.location + ' (' + filename + ':' + call.lineno + ':' + call.colno + ')';
-        var codeContext = getCodeContext(lineno, options.contextLines);
-        if (codeContext) {
-          msg += '\n';
-          msg += codeContext;
-        }
-      } else {
-        msg += call;
+      msg += '  ' + call.location + ' (' + filename + ':' + call.lineno + ':' + call.colno + ')';
+      var codeContext = getCodeContext(filename, lineno, call.colno, options.contextLines);
+      if (codeContext) {
+        msg += '\n';
+        msg += codeContext;
       }
+    } else {
+      msg += call;
     }
-  } else {
-    msg = 'Could not load code from plv8_sources table';
   }
+
   //console.log('msg', msg);
   return { stack: stack, message: msg };
 }
@@ -123,8 +123,11 @@ function dumpSource(lineno, contextLines) {
   var message = '\nFilename: ' + filename + '\n' + code;
   console.log(message);
 }
+
 exports.dumpSource = dumpSource;
 
-plv8.__dumpSource = dumpSource;
+if (isPlv8) {
+  plv8.__dumpSource = dumpSource;
+}
 
 

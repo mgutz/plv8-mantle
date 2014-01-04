@@ -32,10 +32,9 @@ spec('microspec', {
   }
 });
 
-ran = 0;
 spec('microspec - subset marked with "+"', {
   before: function() {
-    ran++;
+    ran = 1;
   },
 
   '+should pass': function() {
@@ -54,28 +53,34 @@ spec('microspec - subset marked with "+"', {
   },
 
   after: function() {
+    console.log('RAN', ran);
     assert.ok(ran === 2);
   },
 
-  'should have run': function() {
+  'should not run because + is used above': function() {
     ran++;
   }
 });
 
 
-spec('microspec - intentional errors', {
+spec('microspec - leak', {
   'should catch global var leak': function() {
-    spec('global var leak',  function() {
-      badvar = 100;
-    });
+    badvar = 100;
+  },
+
+});
+
+
+spec('microspec - intentional error', {
+  before: function() {
     // delete bad var from above for other tests
     var global = (function() { return this; })(null);
     delete global.badvar;
   },
 
   'should fail': function() {
-    assert.ok("hello" === "yello");
-  },
+    assert.ok(false);
+  }
 });
 
 spec('_microspec - entire spec is pending', {
@@ -89,3 +94,31 @@ spec('#microspec - entire spec is ignored', {
     assert.ok(false);
   }
 });
+
+spec('should do async too', {
+  before: function(done) {
+    ran = 100;
+    setTimeout(50, function() {
+      ran = 0;
+      done();
+    });
+  },
+
+  'should run after before': function() {
+    assert.ok(true);
+    ran++;
+  },
+
+  after: function() {
+    assert.ok(ran === 2);
+  },
+
+  'should run after before': function(done) {
+    setTimeout(10, function() {
+      ran++;
+      done();
+    });
+  }
+});
+
+spec.run();

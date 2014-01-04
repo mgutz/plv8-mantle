@@ -2,6 +2,7 @@ var options = require('./options');
 var util = require('../util');
 var stackTrace = require('./stackTrace').stackTrace;
 var AssertionError = require('assert').AssertionError;
+var Nimble = require('../vendor/nimble');
 
 // these are set only if options.colorful(true) is called
 var IGNORE = '#';
@@ -55,13 +56,9 @@ function gatherTestCases(tests) {
   return set;
 }
 
-exports.run = function(group, opts, tests) {
+exports.run = function(group, tests, cb) {
   if (group[0] === IGNORE) return;
-  if (arguments.length === 2) {
-    tests = opts;
-    opts = {};
-  }
-
+  var opts = {};
   var pendingGroup;
   if (group[0] === PENDING) {
     pendingGroup = true;
@@ -78,62 +75,84 @@ exports.run = function(group, opts, tests) {
   var set = gatherTestCases(tests);
   var ran = 0, pending = 0, name, message;
 
-  try {
-    var i, test, testCase;
-    for (i = 0; i < set.length; i++) {
-      test = set[i];
-      name = test.name;
-      testCase = test.fn;
-      if (name[0] === PENDING) {
-        summary.push('  - (PENDING) ' + name.slice(1));
-        pending += 1;
-      } else if (!testCase) {
-        summary.push('  - (PENDING) ' + name);
-        pending += 1;
-      } else if (name[0] === ONLY) {
-        summary.push('  - ' + name.slice(1));
-        testCase();
-        ran += 1;
-      } else if (name === 'before' || name === 'after') {
-        testCase();
+  Nimble.eachSeries(set, function(test, cb) {
+    function next(fn) {
+      function done(err) {
+        if (err) return cb(err);
+        if (options.colorful) {
+          var last = summary[summary.length - 1];
+          summary[summary.length-1] = options.passColor(last);
+        }
+        cb();
+      }
+      if (fn) {
+        try {
+          if (fn.length === 1) {
+            fn(done);
+          } else {
+            fn();
+            done();
+          }
+        } catch(e) {
+          done(e);
+        }
       } else {
-        summary.push('  - ' + name);
-        testCase();
-        ran += 1;
+        done();
+      }
+    }
+
+    name = test.name;
+    var testCase = test.fn;
+    if (name[0] === PENDING) {
+      summary.push('  - (PENDING) ' + name.slice(1));
+      pending += 1;
+      next();
+    } else if (!testCase) {
+      summary.push('  - (PENDING) ' + name);
+      pending += 1;
+      next();
+    } else if (name[0] === ONLY) {
+      summary.push('  - ' + name.slice(1));
+      ran += 1;
+      next(testCase);
+    } else if (name === 'before' || name === 'after') {
+      next(testCase);
+    } else {
+      summary.push('  - ' + name);
+      ran += 1;
+      next(testCase);
+    }
+
+  }, function(err) {
+    if (err) {
+      if (err.stack) {
+        message = stackTrace(err.stack).message;
+      } else {
+        message = err.toString();
       }
 
       if (options.colorful) {
         var last = summary[summary.length - 1];
-        summary[summary.length-1] = options.passColor(last);
+        summary[summary.length-1] = options.failColor(last);
+        summary.push(options.failColor(message));
+      } else {
+        summary.push(message);
+      }
+    } else {
+      message = '  ran ' + ran + ' specs';
+      if (pending > 0) message += ' (' + pending + ' pending)';
+      summary.push(message);
+
+      var leaks = checkGlobals(opts.globals);
+      if (leaks.length > 0) {
+        leaks = '\nGlobal variable leaks: ' + leaks.join(', ');
+        summary.push(options.colorful ? options.failColor(leaks) : leaks);
       }
     }
+    console.log(summary.join('\n'));
+    cb();
+  });
 
-    message = '  ran ' + ran + ' specs';
-    if (pending > 0) message += ' (' + pending + ' pending)';
-    summary.push(message);
-
-    var leaks = checkGlobals(opts.globals);
-    if (leaks.length > 0) {
-      leaks = '\nGlobal variable leaks: ' + leaks.join(', ');
-      summary.push(options.colorful ? options.failColor(leaks) : leaks);
-    }
-  } catch(e) {
-    if (e.stack) {
-      message = stackTrace(e.stack).message;
-    } else {
-      message = e.toString();
-    }
-
-    if (options.colorful) {
-      var last = summary[summary.length - 1];
-      summary[summary.length-1] = options.failColor(last);
-      summary.push(options.failColor(message));
-    } else {
-      summary.push(message);
-    }
-  }
-
-  console.log(summary.join('\n'));
 };
 
 

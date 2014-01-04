@@ -2,6 +2,7 @@ var suite = require('./suite');
 var IGNORE = '#';
 var PENDING = '_';
 var ONLY = '+';
+var Nimble = require('../vendor/nimble');
 
 function Runner(suites) {
   this.suites = [];
@@ -30,10 +31,12 @@ Runner.prototype.run = function() {
     set = subset;
   }
 
-  for (i = 0; i < set.length; i++) {
-    testSuite = set[i];
+  Nimble.eachSeries(set, function(testSuite, cb) {
+    testSuite.args.push(cb);
     suite.run.apply(suite, testSuite.args);
-  }
+  }, function(err) {
+    if (err) console.log(err.toString());
+  });
 };
 
 
